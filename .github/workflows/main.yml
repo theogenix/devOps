@@ -38,18 +38,18 @@ jobs:
         with:
           context: backend/simpleapi/simple-api-student
           push: ${{ github.ref == 'refs/heads/main' }}
-          tags: ${{secrets.DOCKERHUB_USERNAME}}/tp-devops-simple-api_backend:latest
+          tags: ${{secrets.DOCKERHUB_USERNAME}}/tp-devops-simple-api-backend:latest
 
       - name: Build and push database image
         uses: docker/build-push-action@v3
         with:
           context: database
           push: ${{ github.ref == 'refs/heads/main' }}
-          tags: ${{secrets.DOCKERHUB_USERNAME}}/tp-devops-simple-api_database:latest
+          tags: ${{secrets.DOCKERHUB_USERNAME}}/tp-devops-simple-api-database:latest
 
       - name: Build and push httpd image
         uses: docker/build-push-action@v3
         with:
           context: http
           push: ${{ github.ref == 'refs/heads/main' }}
-          tags: ${{secrets.DOCKERHUB_USERNAME}}/tp-devops-simple-api_httpd:latest
+          tags: ${{secrets.DOCKERHUB_USERNAME}}/tp-devops-simple-api-httpd:latest
