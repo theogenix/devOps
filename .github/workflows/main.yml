@@ -25,7 +25,8 @@ jobs:
 
       # Step 3: Build your app with the 'mvn clean verify' command.
       - name: Build and test with Maven
-        run: mvn clean verify         # Execute the 'mvn clean verify' command.
+        run: mvn -B verify sonar:sonar -Dsonar.projectKey=sonarcloudtheogenix -Dsonar.organization=SonarCloudtheogenix -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}  --file .backend/simpleapi/simple-api-student/pom.xml
+
         working-directory: backend/simpleapi/simple-api-student  # Set the working directory for the Maven build.
 
   # Define a job to build and push Docker images.
