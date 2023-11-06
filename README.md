@@ -21,141 +21,339 @@ COPY InsertData.sql /docker-entrypoint-initdb.d/`
 
 A multistage build in Docker involves using multiple FROM statements in a single Dockerfile. Each FROM statement starts a new stage and can have its own base image and set of instructions. This allows you to separate the build environment from the runtime environment, resulting in a smaller and more efficient final image.
 
-*Build Stage:*
-1. A Maven-based image is used to build the application.
-2. The pom.xml and source code are copied into the container.
-3. Maven is used to compile and package the application, producing a JAR file.
+*Step 1 (myapp-build):*
 
-*Run Stage:*
-4. An Amazon Corretto 17 image is used for the runtime.
-5. The JAR file built in the previous stage is copied to the runtime image.
-6. The entry point is set to run the Java application from the JAR file.
+Uses the Maven image with Amazon Corretto 17 as the base image and names this step 'myapp-build'.  
+Sets an environment variable MYAPP_HOME to /opt/myapp.  
+Sets the working directory to /opt/myapp.  
+Copies the pom.xml file from the current directory to the working directory.  
+Copies the entire src directory from the current directory to /opt/myapp/src.  
+Executes Maven to package the application, skipping the tests.  
 
-This separation reduces the final image size and enhances security by excluding unnecessary build tools and artifacts in the runtime image.
+*Step 2:*
 
-### Why should we run the container with a flag -e to give the environment variables?
-
-Using the -e option to set environment variables when running a Docker container is essential for configuring the application in a flexible, secure, and portable way. This separates configuration from application data, promotes consistency between environments, and follows DevOps best practices.
-
-### Why do we need a volume to be attached to our postgres container?
-
-We need a volume linked to the PostgreSQL container to ensure that data is preserved even when the container is destroyed.
+Starts a new step with Amazon Corretto 17 as the base image.  
+Redefines the environment variable MYAPP_HOME to /opt/myapp (redundant, but ensures consistency).  
+Sets the working directory to /opt/myapp.  
+Copies the JAR file(s) from the previous step (myapp-build) to /opt/myapp  
 
 ### 1-3 Document docker-compose most important commands.
+`docker-compose up`: Starts up your Docker Compose-defined services.
+- `docker-compose down`: Stops and removes all containers defined in your `docker-compose.yml` file.
+- `docker-compose build`: Builds or rebuilds the Docker images specified in your `docker-compose.yml` file.
+- `docker-compose ps`: Lists all running services along with their status.
+- `docker-compose logs`: Displays log output from services.
+- `docker-compose exec`: Allows you to execute a command inside a running container.
+- `docker-compose pull`: Pulls the latest version of the images defined in your `docker-compose.yml` file.
+- `docker-compose restart`: Restarts one or more services.
+- `docker-compose pause` / `docker-compose unpause`: Pauses and unpauses running services.
+- `docker-compose stop`: Stops running services without removing the containers.
+- `docker-compose start`: Starts previously stopped services.
+- `docker-compose top`: Displays the running processes of a service.
+- `docker-compose kill`: Forces the termination of one or more services.
+- `docker-compose exec -it <service> sh`: Opens an interactive shell inside a running container.
+- `docker-compose down --volumes`: Removes all containers defined in your `docker-compose.yml` file along with their associated volumes.
 
-- docker-compose up:
-  - *Description:* Start containers defined in the docker-compose.yml file.
-  - *Usage:* docker-compose up
 
-- docker-compose restart:
-  - *Description:* Restart containers defined in the docker-compose.yml file.
-  - *Usage:* docker-compose restart
-
-- docker-compose down:
-  - *Description:* Stop and remove containers defined in the docker-compose.yml file.
-  - *Usage:* docker-compose down
-
-- docker-compose pull:
-  - *Description:* Pull service images defined in the docker-compose.yml file without starting containers.
-  - *Usage:* docker-compose pull
-
-- docker-compose ps:
-  - *Description:* List containers associated with the project defined in the docker-compose.yml file.
-  - *Usage:* docker-compose ps
-
-- docker-compose up -d:
-  - *Description:* Start containers in detached mode, running them in the background.
-  - *Usage:* docker-compose up -d
-
-- docker-compose logs:
-  - *Description:* View the logs of the containers.
-  - *Usage:* docker-compose logs
-
-- docker-compose -f [file]:
-  - *Description:* Specify an alternative Compose file (other than the default docker-compose.yml) to use.
-  - *Usage:* docker-compose -f [file] [command]
-
-- docker-compose exec:
-  - *Description:* Run a command in a running container.
-  - *Usage:* docker-compose exec [service] [command]
-
-- docker-compose build:
-  - *Description:* Build or rebuild services defined in the docker-compose.yml file.
-  - *Usage:* docker-compose build
 
 ### 1-4 Document your docker-compose file.
 
-*Version:* The Docker Compose file is defined using version 3.7.
+`version: '3.7'`: Sets the Docker Compose specification version.
 
-*Services:* This section defines the individual components of the application as services.
+`services:` Defines the services that will be deployed as Docker containers
 
-- *backend:*
-  - This service is responsible for the backend application.
-  - It is built from the source code located in the ./backend/simpleapi/simple-api-student directory.
-  - The container_name specifies the name of the container as "backend."
-  - It is part of the app-network to facilitate communication with other services.
-  - It depends on the database service, ensuring that the database is up and running before the backend starts.
+`build`: Indicates that the Docker image for the service will be built locally from a Dockerfile. This allows customization of the service's environment.  
 
-- *database:*
-  - This service represents the database component of the application.
-  - The container_name sets the name to "database."
-  - The service is built from the ./database directory.
-  - It also belongs to the app-network for inter-service communication.
+`networks`: This command allows specifying which network the service is connected to. It is important for enabling communication between containers.  
 
-- *httpd:*
-  - This service represents an HTTP server (e.g., Apache HTTP server).
-  - The container is built from the ./http directory.
-  - Port mapping is defined, with host port 8081 mapped to container port 80.
-  - It's part of the app-network for network communication.
-  - The depends_on section ensures that the httpd service starts only after the backend service is up and running.
+`depends_on:` This command specifies dependencies between services. This means the specified service must be running before the current service is started.  
 
-*Networks:*
-- The app-network is a custom Docker network created to allow the services to communicate with each other. It provides isolation and connectivity for the services within the application.
+`ports`: Allows specifying which ports will be exposed by the container.
+
+`my-network`: Defines a custom network named "my-network". Services can be connected to this network to facilitate communication between them.
+
+`backend:, database:, httpd`: These are service names. Each service represents a component of the application.
+
+The sections under each service (such as build, networks, etc.) need to be filled in with specific information to properly configure each service.
 
 ### 1-5 Document your publication commands and published images in Docker Hub.
 
-- docker tag my-database USERNAME/my-database:1.0:
-  - Tags an existing Docker image as USERNAME/my-database:1.0.
+`docker tag my-database USERNAME/my-database:1.0`
 
-- docker push USERNAME/my-database:1.0:
-  - Pushes the tagged image to Docker Hub for publication.
+This command creates a new label for the Docker image my-database. The created label is USERNAME/my-database:1.0, where USERNAME is your Docker Hub account username, and 1.0 is the version of the image. This label helps differentiate different versions of the image.
 
-These commands are used to tag and publish Docker images to your Docker Hub repository.
+`docker push USERNAME/my-database:1.0  `
+
+Once the image has been labeled with a meaningful version (in this case, 1.0), you can push the image to your associated Docker Hub registry by using the commande above.
+
+### gotheo78/tp1-httpd:1.0
+
+- **Description:** This is a Docker image named `tp1-httpd` owned by the user `gotheo78` on Docker Hub. The version of this image is `1.0`.
+- **Status:** Inactive (unused for some time).
+- **Architecture:** Linux.
+- **Size:** 64.76MB
+
+### gotheo78/tp1-backend:1.0
+
+- **Description:** This is a Docker image named `tp1-backend` owned by the user `gotheo78` on Docker Hub. The version of this image is `1.0`.
+- **Status:** Inactive (unused for some time).
+- **Architecture:** Linux.
+- **Size:** 249.99MB.
+
+### gotheo78/tp1-database
+
+- **Description:** This is a Docker image named `tp1-database` owned by the user `gotheo78` on Docker Hub.
+- **Status:** Inactive (unused for some time).
+- **Architecture:** Linux.
+- **Size:** 81.73MB
+
 
 ## GitHub Actions
 
-### What is it supposed to do? → mvn clean verify
-
-The command mvn clean verify is used to build and run tests in a Maven-based Java project. It cleans the project, compiles the code, and executes tests to ensure the application functions correctly. It should be run from the project's root directory where the pom.xml file is located.
-
 ### 2-1 What are testcontainers?
 
-Testcontainers is a Java library used for simplified integration testing by managing lightweight, disposable containers. It's particularly useful for starting and stopping services like databases during testing, ensuring test reliability.
+Testcontainers is a valuable tool for developers looking to automate tests for applications that rely on external services, making it easier to achieve reliable and comprehensive test coverage.
 
 ### 2-2 Document your GitHub Actions configurations.
+```
+name: CI devops 2023  # Name of this CI/CD workflow.
 
-*GitHub Actions configuration summary:*
+on:  
+  push:  
+    branches:  
+      - main  # This workflow will be triggered on any push to the "main" branch.
 
-- *Workflow name:* "CI devops 2023"
-- *Triggered by:* Pushes to the master branch and pull requests.
-- *Job:* "test-backend" on ubuntu-22.04.
-- *Steps:* Check out code, set up JDK 17, build and test with mvn clean verify.
-- *Secrets:* DOCKERHUB_USERNAME and DOCKERHUB_TOKEN for secure access.
-- **Integration testing and possible CI/CD pipeline.
+jobs:
 
-These configurations automate building, testing, and potentially deploying your application while safeguarding secrets for security.
+  test-backend:  # Definition of a job named "test-backend".
+    runs-on: ubuntu-22.04  # This job will run on an Ubuntu 22.04 virtual machine.
 
-### For what purpose do we need to push Docker images?
+    steps:  # Steps to be executed in this job.
+      - uses: actions/checkout@v2.4.2  # Fetches source code from the repository.
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3  # Sets up the Java environment.
+        with:
+          distribution: "adopt"      
+          java-version: "17"         
 
-Docker images are pushed for distribution, deployment, version control, and portability. They facilitate collaboration, support CI/CD, and ensure that the latest application version is available for use.
+      - name: Build and test with Maven
+        run: mvn clean verify
+        working-directory: backend/simpleapi/simple-api-student  # Specifies the working directory for this step.
 
-### Document your quality gate configuration.
+  build-and-push-docker-image:
+    needs: test-backend  # This job depends on "test-backend" being executed first.
+    runs-on: ubuntu-22.04  # This job will run on an Ubuntu 22.04 virtual machine.
 
-Quality gate configuration using SonarCloud involves:
+    steps:  # Steps to be executed in this job.
+      - name: Login to DockerHub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}  # Logs in to DockerHub.
 
-- Register on SonarCloud and create an organization.
-- Retrieve project and organization keys.
-- Modify your GitHub Actions workflow to run SonarCloud analysis after building and testing.
-- Set parameters like sonar.projectKey and sonar.organization.
-- Use the secrets.SONAR_TOKEN for authentication.
-- Ensure code quality and security with each commit and view SonarCloud analysis reports online.
+      - name: Checkout code
+        uses: actions/checkout@v2.5.0  # Fetches source code from the repository.
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v3  # Builds and pushes the backend Docker image.
+        with:
+          context: backend/simpleapi/simple-api-student
+          push: ${{ github.ref == 'refs/heads/main' }}  # Pushes only if the branch is "main".
+          tags: ${{secrets.DOCKER_USERNAME}}/tp-devops-simple-api-backend:latest  # Image tag.
+
+      - name: Build and push database image
+        uses: docker/build-push-action@v3  # Builds and pushes the database Docker image.
+        with:
+          context: database
+          push: ${{ github.ref == 'refs/heads/main' }}  # Pushes only if the branch is "main".
+          tags: ${{secrets.DOCKER_USERNAME}}/tp-devops-simple-api-database:latest  # Image tag.
+
+      - name: Build and push httpd image
+        uses: docker/build-push-action@v3  # Builds and pushes the httpd Docker image.
+        with:
+          context: http
+          push: ${{ github.ref == 'refs/heads/main' }}  # Pushes only if the branch is "main".
+          tags: ${{secrets.DOCKER_USERNAME}}/tp-devops-simple-api-httpd:latest  # Image tag.
+```
+
+
+### 2-3 Document your quality gate configuration.
+
+```
+name: CI devops 2023  # Name of this CI/CD workflow.
+
+on:
+  push:
+    branches:
+      - main  # This workflow will be triggered on any push to the "main" branch.
+
+jobs:
+
+  test-backend:  # Definition of a job named "test-backend".
+    runs-on: ubuntu-22.04  # This job will run on an Ubuntu 22.04 virtual machine.
+
+    steps:  # Steps to be executed in this job.
+      - uses: actions/checkout@v2.4.2  # Fetches source code from the repository.
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3  # Sets up the Java environment.
+        with:
+          distribution: "adopt"      
+          java-version: "17"         
+
+      - name: Build and test with Maven
+        run: mvn -B verify sonar:sonar -Dsonar.projectKey=theogenix_devOps -Dsonar.organization=sonarcloudtheogenix -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}  --file ./pom.xml
+        working-directory: backend/simpleapi/simple-api-student  # Specifies the working directory for this step.
+
+  build-and-push-docker-image:
+    needs: test-backend  # This job needs "test-backend" to be executed before it.
+    runs-on: ubuntu-22.04  # This job will run on an Ubuntu 22.04 virtual machine.
+
+    steps:  # Steps to be executed in this job.
+      - name: Login to DockerHub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}  # Logs in to DockerHub.
+
+      - name: Checkout code
+        uses: actions/checkout@v2.5.0  # Fetches source code from the repository.
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v3  # Builds and pushes the backend Docker image.
+        with:
+          context: backend/simpleapi/simple-api-student
+          push: ${{ github.ref == 'refs/heads/main' }}  # Pushes only if the branch is "main".
+          tags: ${{secrets.DOCKER_USERNAME}}/tp-devops-simple-api-backend:latest  # Image tag.
+
+      - name: Build and push database image
+        uses: docker/build-push-action@v3  # Builds and pushes the database Docker image.
+        with:
+          context: database
+          push: ${{ github.ref == 'refs/heads/main' }}  # Pushes only if the branch is "main".
+          tags: ${{secrets.DOCKER_USERNAME}}/tp-devops-simple-api-database:latest  # Image tag.
+
+      - name: Build and push httpd image
+        uses: docker/build-push-action@v3  # Builds and pushes the httpd Docker image.
+        with:
+          context: http
+          push: ${{ github.ref == 'refs/heads/main' }}  # Pushes only if the branch is "main".
+          tags: ${{secrets.DOCKER_USERNAME}}/tp-devops-simple-api-httpd:latest  # Image tag.
+
+```
+## Ansible
+
+### 3-1 Document your inventory and base commands
+`all`: This is the root level of the YAML document. It indicates the beginning of the inventory file.
+
+`vars`: This section is used to define variables that can be used in Ansible playbooks. In this case, two variables are defined:
+
+`ansible_user`: Specifies the username (centos) that Ansible will use to connect to the target host.
+
+`ansible_ssh_private_key_file`: Specifies the file path (/etc/ansible/id_rsa) to the private key that Ansible will use for authentication.
+
+`children`: This section is used to group hosts into different categories, referred to as "children". These categories can then be used to apply configurations or tasks to specific groups of hosts.
+
+`prod`: This is the name of the group of hosts. In this case, it is named prod.
+
+`hosts`: Indicates that the following line will list the hosts belonging to the prod group.
+
+`theo-masaki.genix.takima.cloud`: This is the hostname of the target server. It belongs to the prod group.
+
+### 3-2 Document your playbook
+
+`hosts`: all: This playbook will apply to all hosts listed in the inventory file. It targets all available hosts.
+
+`gather_facts`: false: This disables the gathering of facts about the target hosts. Facts include information like IP addresses, operating system details, and more. Disabling this can make the playbook run faster if you don't need these facts.
+
+`become`: true: This indicates that Ansible should use privilege escalation (such as sudo) to execute tasks. This allows tasks to be executed with elevated privileges.
+
+`roles`: This section specifies the roles that will be applied to the hosts. Roles are a way to organize and reuse sets of tasks, handlers, and variables.
+
+`docker`: This role will be applied to the hosts. It likely includes tasks related to installing and configuring Docker.
+
+`network`: This role will be applied to the hosts. It likely includes tasks related to network configuration.
+
+`backend`: This role will be applied to the hosts. It likely includes tasks related to setting up the backend of an application.
+
+`database`: This role will be applied to the hosts. It likely includes tasks related to setting up and configuring a database.
+
+`httpd`: This role will be applied to the hosts. It likely includes tasks related to setting up and configuring an HTTP server.
+
+### 3-3 Document your docker_container tasks configuration.
+
+```
+- name: launch backend   # This is a task named "launch backend" which describes the action to be performed.
+  docker_container:    # This module is used to manage Docker containers.
+    name: simpleapistudent3   # The name of the Docker container to be managed.
+    image: gotheo78/tp-devops-simple-api-backend:latest   # The Docker image to use for this container.
+    state: started   # The desired state of the container, in this case, it's set to "started".
+    networks:    # This section is used to configure the networks the container will be connected to.
+      - name: app-network   # The name of the network the container will be connected to.
+
+```
+```
+- name: launch database   # This is a task named "launch database" which describes the action to be performed.
+  docker_container:    # This module is used to manage Docker containers.
+    name: tp1_docker   # The name of the Docker container to be managed.
+    image: gotheo78/tp-devops-simple-api-database:latest   # The Docker image to use for this container.
+    state: started   # The desired state of the container, in this case, it's set to "started".
+    networks:    # This section is used to configure the networks the container will be connected to.
+      - name: app-network   # The name of the network the container will be connected to.
+```
+```
+
+# Install device-mapper-persistent-data
+- name: Install device-mapper-persistent-data
+  yum:
+    name: device-mapper-persistent-data
+    state: latest
+
+# Install lvm2
+- name: Install lvm2
+  yum:
+    name: lvm2
+    state: latest
+
+# Add Docker repository
+- name: add repo docker
+  command:
+    cmd: sudo yum-config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+
+# Install Python3
+- name: Install Python3
+  yum:
+    name: python3
+    state: latest
+
+# Install Python pip
+- name: Install Python pip
+  yum:
+    name: python3-pip
+    state: latest
+
+# Install Docker
+- name: Install Docker
+  yum:
+    name: docker-ce
+    state: present
+
+# Make sure Docker is running
+- name: Make sure Docker is running
+  service: name=docker state=started
+  tags: docker
+```
+```
+- name: launch proxy
+  docker_container:
+    name: proxy   # Name of the Docker container.
+    image: gotheo78/tp-devops-simple-api-httpd:latest   # Docker image to use for the container.
+    state: started   # Desired state of the container (started).
+    ports:
+      - "80:80"   # Port mapping from host (left side) to container (right side).
+    networks:
+      - name: app-network   # Network configuration for the container.
+```
+```
+
+- name: create network
+  docker_network:
+    name: app-network   # Name of the Docker network to be created.
+    driver: bridge      # Specifies the network driver to be used (bridge in this case).
+
+```
+
+
