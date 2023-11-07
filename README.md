@@ -38,23 +38,13 @@ Sets the working directory to /opt/myapp.
 Copies the JAR file(s) from the previous step (myapp-build) to /opt/myapp  
 
 ### 1-3 Document docker-compose most important commands.
-`docker-compose up`: Starts up your Docker Compose-defined services.
-- `docker-compose down`: Stops and removes all containers defined in your `docker-compose.yml` file.
-- `docker-compose build`: Builds or rebuilds the Docker images specified in your `docker-compose.yml` file.
-- `docker-compose ps`: Lists all running services along with their status.
-- `docker-compose logs`: Displays log output from services.
-- `docker-compose exec`: Allows you to execute a command inside a running container.
-- `docker-compose pull`: Pulls the latest version of the images defined in your `docker-compose.yml` file.
-- `docker-compose restart`: Restarts one or more services.
-- `docker-compose pause` / `docker-compose unpause`: Pauses and unpauses running services.
-- `docker-compose stop`: Stops running services without removing the containers.
-- `docker-compose start`: Starts previously stopped services.
-- `docker-compose top`: Displays the running processes of a service.
-- `docker-compose kill`: Forces the termination of one or more services.
-- `docker-compose exec -it <service> sh`: Opens an interactive shell inside a running container.
-- `docker-compose down --volumes`: Removes all containers defined in your `docker-compose.yml` file along with their associated volumes.
-
-
+`version`: Specifies the Docker Compose version being used.
+`services`: Lists the deployed services in the form of containers.
+`build`: Indicates the directory to be built.
+`container_name`: Sets the name of the container.
+`networks`: Specifies which network the service is connected to. Facilitates communication between containers.
+`depends_on`: Specifies the dependency between services. If the specified service is not running, the current service will not start.
+`ports`: Defines the ports that will be exposed by the container.
 
 ### 1-4 Document your docker-compose file.
 
